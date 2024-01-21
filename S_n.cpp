@@ -111,10 +111,11 @@ public:
 
         SHORT tempX = head->x + x;
         SHORT tempY = head->y + y;
-
+        bool test_Fruit = false;
         if (tempX == fruit->x && tempY == fruit->y) 
         {
             Fruit();
+            test_Fruit = true;
         }
         else 
         {
@@ -123,9 +124,11 @@ public:
                 moveTailToBeginning();
             }
         }
-
-        head->x += x;
-        head->y += y;
+        if(!test_Fruit)
+        {
+            head->x += x;
+            head->y += y;
+        }
     }
 
     void Fruit() 
