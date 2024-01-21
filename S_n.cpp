@@ -56,7 +56,7 @@ public:
     SHORT length;
     std::shared_ptr<Node> fruit;
 
-    Snake() : head(new Node(0, 0)), length(1), fruit(newFruit()), tail(head) {}
+    Snake() : head(new Node(10, 10)), length(1), fruit(newFruit()), tail(head) {}
 
     char keyScan() 
     {
@@ -111,24 +111,26 @@ public:
 
         SHORT tempX = head->x + x;
         SHORT tempY = head->y + y;
-        bool test_Fruit = false;
+
         if (tempX == fruit->x && tempY == fruit->y) 
         {
             Fruit();
-            test_Fruit = true;
+            return;
         }
-        else 
+        
+        if (key != '\0') 
         {
-            if (key != '\0') 
-            {
-                moveTailToBeginning();
-            }
+            moveTailToBeginning();
         }
-        if(!test_Fruit)
+        else
         {
-            head->x += x;
-            head->y += y;
+            y = -1;
+            moveTailToBeginning();
         }
+        
+        head->x += x;
+        head->y += y;
+    
     }
 
     void Fruit() 
@@ -179,8 +181,9 @@ public:
             std::cout << current->data;
             current = current->next;
         }
-
-        Sleep(100);
+        setCursorPosition(head->x, head->y);
+        
+        Sleep(300);
     }
 
     void display() 
