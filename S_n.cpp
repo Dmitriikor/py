@@ -25,10 +25,10 @@ class Game
     };
     
     friend class Snake;
-    static const SHORT WIDTH = 20;
-    static const SHORT HEIGHT = 20;
+    static const SHORT WIDTH = 10;
+    static const SHORT HEIGHT = 10;
     std::shared_ptr<Node> fruit;
-    std::vector<std::vector<char>> matrix{WIDTH + 2, std::vector<char>(HEIGHT + 2, '~')};
+    std::vector<std::vector<char>> matrix{HEIGHT + 2, std::vector<char>(WIDTH + 2,' ')};
 
     enum class Key
     {
@@ -45,7 +45,7 @@ class Game
         LEFT = Key::a,
         RIGHT = Key::d
     };
-    static void drawField()
+    void drawField()
     {
         for (SHORT i = 0; i < WIDTH + 2; i++)
         {
@@ -65,6 +65,29 @@ class Game
         std::cout << "\n";
     }
 
+    void drawFieldMtrx()
+    {
+        for (SHORT i = 0; i < WIDTH + 2; i++)
+        {
+            matrix[0][i] = '#';
+        }
+        std::cout << "\n";
+
+        for (SHORT i = 0; i < HEIGHT; i++)
+        {
+            matrix[i][0] = '#';
+            matrix[i][WIDTH+1] = '#';
+        }
+
+        matrix[HEIGHT][0] = '#';
+        matrix[HEIGHT][WIDTH+1] = '#';
+
+        for (SHORT i = 0; i < WIDTH + 2; i++)
+        {
+            matrix[HEIGHT+1][i] = '#';
+        }
+    }
+
     void newFruit()
     {
         SHORT x = rand() % (WIDTH - 3) + 2;
@@ -77,10 +100,12 @@ class Game
         return fruit;
     }
 
+
     public:
         Game() 
         {
             newFruit();
+            drawFieldMtrx();
         }
 
     class Snake
@@ -90,10 +115,14 @@ class Game
         std::shared_ptr<Node> head;
         std::shared_ptr<Node> tail;
         SHORT length;
-
+        Game& game;
         int Pressed_Key = INT_CAST(Key::w);
 
-        Snake( ) : head(std::make_shared<Node>(SHORT_CAST(WIDTH / 2), SHORT_CAST(HEIGHT / 2), '|')), length(1), tail(head) {}
+        Snake(Game& game) : game(game), head(std::make_shared<Node>(SHORT_CAST(WIDTH / 2), SHORT_CAST(HEIGHT / 2), '|'))
+        {
+          game.matrix[head->y][head->x] = head->data;   
+          tail = head;  
+        }
 
         void keyScan()
         {
@@ -108,7 +137,7 @@ class Game
             else
                 return;
         }
-
+        //TODO del this
         void printList()
         {
             std::shared_ptr<Node> currentNode = head;
@@ -120,7 +149,7 @@ class Game
             std::cout << "\n";
         }
 
-        void move(Game& game)
+        void move()
         {
             SHORT x = 0, y = 0;
             if (Pressed_Key == INT_CAST(Direction::UP))
@@ -135,19 +164,27 @@ class Game
             SHORT tempX = head->x + x;
             SHORT tempY = head->y + y;
             
+            game.matrix[tail->y][tail->x] = ' ';
+
             if (tempX ==  game.fruit->x && tempY ==  game.fruit->y)
             {
-                Fruit_eat(game);
+                Fruit_eat();
+                game.matrix[tail->y][tail->x] = ';';
+                game.matrix[head->y][head->x] = '=';
                 return;
             }
 
             moveTailToBeginning();
-
+            checkRule(x,y);
             head->x += x;
             head->y += y;
+
+            game.matrix[tail->y][tail->x] = ';';
+            game.matrix[head->y][head->x] = '=';
+            game.matrix[game.fruit->y][game.fruit->x] = game.fruit->data;
         }
 
-        void Fruit_eat(Game& game)
+        void Fruit_eat()
         {
             length++;
             // fruit->data = static_cast<char>(length+48);
@@ -178,11 +215,11 @@ class Game
             head = head->prev;
             head->prev = nullptr;
         }
-
-        void displayForward(Game& game)
+        //TODO move to Game
+        void displayForward()
         {
             system("cls");
-            drawField();
+            game.drawField();
             setCursorPosition( game.fruit->x,  game.fruit->y);
             std::cout <<  game.fruit->data;
 
@@ -206,15 +243,26 @@ class Game
             }
             setCursorPosition(head->x, head->y);
 
+            setCursorPosition(0, game.HEIGHT+3);
+            for (size_t i = 0; i < game.matrix.size(); i++)
+            {
+                for (size_t j = 0; j < game.matrix[i].size(); j++)
+                {
+                    std::cout << game.matrix[i][j];
+                    
+                }
+                std::cout << "\n";
+            }
+
             Sleep(300);
         }
-
-        void display(Game& game)
+        //TODO move to Game
+        void display()
         {
             std::shared_ptr<Node> current = head;
             system("cls");
 
-            drawField();
+            game.drawField();
             setCursorPosition( game.fruit->x,  game.fruit->y);
             std::cout << "0";
 
@@ -226,6 +274,15 @@ class Game
             }
 
             setCursorPosition(0, HEIGHT + 2);
+        }
+
+        void checkRule(SHORT x, SHORT y)
+        {
+            if(game.matrix[head->y+y][head->x+x] != ' ')
+            {
+                std::cout << "\a";
+                exit(-9);
+            }
         }
 
     private:
@@ -244,15 +301,18 @@ int main()
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
     std::cout.tie(nullptr);
+
     Game game;
-    Game::Snake snake;
+    Game::Snake snake(game);
 
     while (true)
     {
         srand(static_cast<unsigned>(time(nullptr)));
-        snake.displayForward(game);
+
+        //TODO WarFog add
+        snake.displayForward();
         snake.keyScan();
-        snake.move(game);
+        snake.move();
     }
 
     return 0;
