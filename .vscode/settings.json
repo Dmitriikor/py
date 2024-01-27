@@ -61,8 +61,16 @@
     "xstring": "cpp",
     "xtr1common": "cpp",
     "xutility": "cpp",
-    "fstream": "cpp"
+    "fstream": "cpp",
+    "array": "cpp",
+    "deque": "cpp",
+    "execution": "cpp",
+    "numeric": "cpp",
+    "queue": "cpp",
+    "ranges": "cpp",
+    "span": "cpp"
 },
 "C_Cpp.default.cppStandard": "c++23",
-"C_Cpp.default.cStandard": "c17"
+"C_Cpp.default.cStandard": "c17",
+"C_Cpp.dimInactiveRegions": false
 }
