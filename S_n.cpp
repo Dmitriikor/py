@@ -6,23 +6,29 @@
 #include <windows.h>
 #include <memory>
 
+#define INT_CAST(x) static_cast<int>(x)
+#define SHORT_CAST(x) static_cast<SHORT>(x)
+
 const SHORT WIDTH = 20;
 const SHORT HEIGHT = 20;
 
+enum class Key {w = 'w', a = 'a', d = 'd', s = 's', ESC = 27};
+enum class Direction {UP = Key::w, DOWN = Key::s, LEFT = Key::a, RIGHT = Key::d};
 class Node 
 {
 public:
     SHORT x, y;
-    SHORT data;
+    char data;
     std::shared_ptr<Node> next;
     std::shared_ptr<Node> prev;
 
-    Node(SHORT x, SHORT y, char data = '1') : x(x), y(y), data(data), next(nullptr), prev(nullptr) {}
+    Node(SHORT x, SHORT y, char data = '0') : x(x), y(y), data(data), next(nullptr), prev(nullptr) {}
 };
 
 HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
-void drawField() {
+void drawField() 
+{
     for (SHORT i = 0; i < WIDTH + 2; i++) 
     {
         std::cout << "#";
@@ -31,7 +37,7 @@ void drawField() {
 
     for (SHORT i = 0; i < HEIGHT; i++) 
     {
-        std::cout << '#' << std::setw(WIDTH) << std::setfill(' ') << '#' << "\n";
+        std::cout << '#' << std::setw(WIDTH+1) << std::setfill(' ') << '#' << "\n";
     }
 
     for (SHORT i = 0; i < WIDTH + 2; i++) 
@@ -45,7 +51,7 @@ std::shared_ptr<Node> newFruit()
 {
     SHORT x = rand() % (WIDTH - 3) + 2;  
     SHORT y = rand() % (HEIGHT - 3) + 2;  
-    return std::make_shared<Node>(x, y, '0');
+    return std::make_shared<Node>(SHORT_CAST(x), SHORT_CAST(y), '&');
 }
 
 class Snake 
@@ -54,31 +60,35 @@ public:
     std::shared_ptr<Node> head;
     std::shared_ptr<Node> tail;
     SHORT length;
+    bool is_new_pressed = false;
+    int Pressed_Key = INT_CAST(Key::w);
     std::shared_ptr<Node> fruit;
 
-    Snake() : head(new Node(10, 10)), length(1), fruit(newFruit()), tail(head) {}
+    Snake() : head(new Node(SHORT_CAST(10), SHORT_CAST(10), '|')), length(1), fruit(newFruit()), tail(head) {}
 
-    char keyScan() 
+    void keyScan() 
     {
          if (_kbhit()) 
          {
-            char tempKey = static_cast<char>(_getch());
-            if (tempKey == 'a' || tempKey == 'd' || tempKey == 'w' || tempKey == 's') 
+            int tempKey = _getch();
+            if (tempKey == INT_CAST(Key::a) || tempKey == INT_CAST(Key::d)
+               || tempKey == INT_CAST(Key::w) || tempKey == INT_CAST(Key::s)) 
             {
-                return tempKey;
+                Pressed_Key = tempKey;
+                is_new_pressed = true;
             }
             else 
             {
-                return 'w';
+                return;
             }
         }
         else 
         {
-            return '\0';
+            return;
         }
     }
 
-    void prSHORTList() 
+    void printList() 
     {
         std::shared_ptr<Node> currentNode = head;
         while (currentNode) 
@@ -89,25 +99,17 @@ public:
         std::cout << "\n";
     }
 
-    void move(char key) 
+    void move() 
     {
         SHORT x = 0, y = 0;
-        if (key == 'w') 
-        {
+        if (Pressed_Key == INT_CAST(Direction::UP)) 
             y = -1;
-        }
-        else if (key == 's') 
-        {
+        else if (Pressed_Key == INT_CAST(Direction::DOWN) )
             y = 1;
-        }
-        else if (key == 'a') 
-        {
+        else if (Pressed_Key == INT_CAST(Direction::LEFT) )
             x = -1;
-        }
-        else if (key == 'd') 
-        {
+        else if (Pressed_Key == INT_CAST(Direction::RIGHT)) 
             x = 1;
-        }
 
         SHORT tempX = head->x + x;
         SHORT tempY = head->y + y;
@@ -117,26 +119,18 @@ public:
             Fruit();
             return;
         }
-        
-        if (key != '\0') 
-        {
-            moveTailToBeginning();
-        }
-        else
-        {
-            y = -1;
-            moveTailToBeginning();
-        }
-        
+
+        moveTailToBeginning();
+
         head->x += x;
         head->y += y;
-    
     }
 
     void Fruit() 
     {
         length++;
-        fruit->data = length;
+        //fruit->data = static_cast<char>(length+48);
+        fruit->data = '|';
         head->prev = fruit;
         fruit->next = head;
         head = fruit;
@@ -147,14 +141,10 @@ public:
     void moveTailToBeginning() 
     {
         if (head == nullptr || tail == nullptr) 
-        {
             return;
-        }
 
         if (head == tail) 
-        {
             return;
-        }
 
         tail->x = head->x;
         tail->y = head->y;
@@ -163,6 +153,7 @@ public:
         head->prev = tail;
         tail->prev->next = nullptr;
         tail = tail->prev;
+        // 
         head = head->prev;
         head->prev = nullptr;
     }
@@ -175,10 +166,21 @@ public:
         std::cout << fruit->data;
 
         std::shared_ptr<Node> current = head;
+        
         while (current) 
         {
             setCursorPosition(current->x, current->y);
-            std::cout << current->data;
+            if (current == head)
+                std::cout << '=';
+            else if (current!=tail)
+            {
+                if((Pressed_Key == INT_CAST(Key::a)) || (Pressed_Key == INT_CAST(Key::d)))
+                     std::cout << '-';
+                else     
+                    std::cout << current->data;
+            }
+            else
+                std::cout << ';';
             current = current->next;
         }
         setCursorPosition(head->x, head->y);
@@ -221,14 +223,14 @@ int main()
     std::cin.tie(nullptr);
     std::cout.tie(nullptr);
 
-    srand(static_cast<unsigned>(time(nullptr)));
 
     Snake snake;
     while (true) 
     {
+        srand(static_cast<unsigned>(time(nullptr)));
         snake.displayForward();
-        char key = snake.keyScan();
-        snake.move(key);
+        snake.keyScan();
+        snake.move();
     }
 
     return 0;
