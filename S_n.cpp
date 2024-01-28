@@ -14,26 +14,42 @@ HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
 class Game
 {
-    class Node
+    class Info
     {
+        friend class Snake;
     public:
         SHORT x, y;
         char data;
+
+        Info(SHORT x, SHORT y, char data = '0') : x(x), y(y), data(data) {}
+    };
+
+    class Node
+    {
+        friend class Snake;
+
+    public:
+        //SHORT x, y;
+        //char data;
+        Info info;
         std::shared_ptr<Node> next;
         std::shared_ptr<Node> prev;
 
-        Node(SHORT x, SHORT y, char data = '0') : x(x), y(y), data(data), next(nullptr), prev(nullptr) {}
+        Node(const Info& info) : info(info), next(nullptr), prev(nullptr) {}
     };
 
     friend class Snake;
     static const SHORT WIDTH = 20;
     static const SHORT HEIGHT = 20;
-    std::shared_ptr<Node> fruit;
-    std::shared_ptr<Node> fast;
+    //std::shared_ptr<Node> fruit;
+    //std::shared_ptr<Node> fast;
+    Info fruit;
+    Info fast;
     int time = 500;
     float radius = 1;
     bool warFog = false;
     bool isDisplayOld = false;
+
     std::vector<std::vector<char>> matrix{HEIGHT + 2, std::vector<char>(WIDTH + 2, ' ')};
     std::vector<std::vector<char>> fog_Matrix;
 
@@ -97,17 +113,17 @@ class Game
 
     void newFruit()
     {
+        
         for (int i = 0; i <= (WIDTH * HEIGHT) * 20; i++)
         {
-            SHORT x = rand() % (WIDTH) + 1;
-            SHORT y = rand() % (HEIGHT) + 1;
-            fruit = std::make_shared<Node>(SHORT_CAST(x), SHORT_CAST(y), '&');
+            fruit.x = SHORT_CAST(rand() % (WIDTH) + 1);
+            fruit.y = SHORT_CAST(rand() % (HEIGHT) + 1);
 
-            if (matrix[fruit->y][fruit->x] == ' ')
+            if (matrix[fruit.y][fruit.x] == ' ')
             {
-                if (matrix[fruit->y][fruit->x] == '=')
+                if (matrix[fruit.y][fruit.x] == '=')
                     std::cout << "\a";
-                matrix[fruit->y][fruit->x] = fruit->data;
+                matrix[fruit.y][fruit.x] = fruit.data;
                 return;
                 //
                 // for (size_t ii = 0; ii < matrix.size(); ii++)
@@ -128,25 +144,25 @@ class Game
     {
         for (int i = 0; i <= (WIDTH * HEIGHT) * 20; i++)
         {
-            SHORT x = rand() % (WIDTH) + 1;
-            SHORT y = rand() % (HEIGHT) + 1;
-            fast = std::make_shared<Node>(SHORT_CAST(x), SHORT_CAST(y), 'F');
-            if (matrix[fruit->y][fruit->x] != '=')
+            fast.x = SHORT_CAST(rand() % (WIDTH) + 1);
+            fast.y = SHORT_CAST(rand() % (HEIGHT) + 1);
+
+            if (matrix[fast.y][fast.x] == ' ')
             {
-                matrix[fruit->y][fruit->x] = fast->data;
+                matrix[fast.y][fast.x] = fast.data;
                 return;
             }
         }
         throw std::logic_error("newFast error");
     }
 
-    std::shared_ptr<Node> getFruit()
+    Info getFruit()
     {
         return fruit;
     }
 
 public:
-    Game()
+    Game() : fruit(0, 0,'&'), fast(0, 0,'F')
     {
         newFruit();
         newFast();
@@ -173,9 +189,9 @@ public:
         Game &game;
         int Pressed_Key = INT_CAST(Key::w);
 
-        Snake(Game &game) : game(game), head(std::make_shared<Node>(SHORT_CAST(WIDTH / 2), SHORT_CAST(HEIGHT / 2), '|'))
+        Snake(Game &game) : game(game), head(std::make_shared<Node>(Info(SHORT_CAST(WIDTH / 2), SHORT_CAST(HEIGHT / 2), '|')))
         {
-            game.matrix[head->y][head->x] = head->data;
+            game.matrix[head->info.y][head->info.x] = head->info.data;
             tail = head;
         }
 
@@ -192,17 +208,7 @@ public:
             else
                 return;
         }
-        // TODO del this
-        void printList()
-        {
-            std::shared_ptr<Node> currentNode = head;
-            while (currentNode)
-            {
-                std::cout << currentNode->data << " ";
-                currentNode = currentNode->next;
-            }
-            std::cout << "\n";
-        }
+
 
         void move()
         {
@@ -216,21 +222,21 @@ public:
             else if (Pressed_Key == INT_CAST(Direction::RIGHT))
                 x = 1;
 
-            SHORT tempX = head->x + x;
-            SHORT tempY = head->y + y;
+            SHORT tempX = head->info.x + x;
+            SHORT tempY = head->info.y + y;
 
-            game.matrix[tail->y][tail->x] = ' ';
+            Info old_tail = tail->info;
 
-            if (tempX == game.fruit->x && tempY == game.fruit->y)
+            if (tempX == game.fruit.x && tempY == game.fruit.y)
             {
                 fruit_Eat();
-                game.matrix[tail->y][tail->x] = ';';
-                game.matrix[head->y][head->x] = '=';
+                game.matrix[tail->info.y][tail->info.x] = ';';
+                game.matrix[head->info.y][head->info.x] = '=';
                 return;
             }
-            if (tempX == game.fast->x && tempY == game.fast->y)
+            if (tempX == game.fast.x && tempY == game.fast.y)
             {
-                game.matrix[game.fast->y][game.fast->x] = ' ';
+                game.matrix[game.fast.y][game.fast.x] = ' ';
                 fastEat();
             }
 
@@ -238,23 +244,26 @@ public:
 
             checkRule(x, y);
 
-            head->x += x;
-            head->y += y;
+            head->info.x += x;
+            head->info.y += y;
 
-            game.matrix[game.fast->y][game.fast->x] = game.fast->data;
-            game.matrix[tail->y][tail->x] = ';';
-            game.matrix[head->y][head->x] = '=';
-            game.matrix[game.fruit->y][game.fruit->x] = game.fruit->data;
+            game.matrix[old_tail.y][old_tail.x] = ' ';
+            
+            game.matrix[game.fast.y][game.fast.x] = game.fast.data;
+            game.matrix[tail->info.y][tail->info.x] = ';';
+            game.matrix[head->info.y][head->info.x] = '=';
+            game.matrix[game.fruit.y][game.fruit.x] = game.fruit.data;
         }
 
         void fruit_Eat()
         {
             length++;
-            // fruit->data = static_cast<char>(length+48);
-            game.fruit->data = '|';
-            head->prev = game.fruit;
-            game.fruit->next = head;
-            head = game.fruit;
+            // fruit.data = static_cast<char>(length+48);
+            std::shared_ptr<Node> fruit_node = std::make_shared<Node>(game.fruit);
+            fruit_node->info.data = '|';
+            head->prev = fruit_node;
+            fruit_node->next = head;
+            head = fruit_node;
 
             game.newFruit();
         }
@@ -276,9 +285,9 @@ public:
             if (head == tail)
                 return;
 
-            tail->x = head->x;
-            tail->y = head->y;
-            tail->data = head->data;
+            tail->info.x = head->info.x;
+            tail->info.y = head->info.y;
+            tail->info.data = head->info.data;
             tail->next = head;
             head->prev = tail;
             tail->prev->next = nullptr;
@@ -294,17 +303,17 @@ public:
             if (game.isDisplayOld)
             {
                 game.drawField();
-                setCursorPosition(game.fruit->x, game.fruit->y);
-                std::cout << game.fruit->data;
-                setCursorPosition(game.fast->x, game.fast->y);
-                std::cout << game.fast->data;
+                setCursorPosition(game.fruit.x, game.fruit.y);
+                std::cout << game.fruit.data;
+                setCursorPosition(game.fast.x, game.fast.y);
+                std::cout << game.fast.data;
                 std::shared_ptr<Node> current = head;
                 setCursorPosition(0, 0);
                 std::cout << game.radius;
 
                 while (current)
                 {
-                    setCursorPosition(current->x, current->y);
+                    setCursorPosition(current->info.x, current->info.y);
                     if (current == head)
                         std::cout << '=';
                     else if (current != tail)
@@ -312,13 +321,13 @@ public:
                         if ((Pressed_Key == INT_CAST(Key::a)) || (Pressed_Key == INT_CAST(Key::d)))
                             std::cout << '-';
                         else
-                            std::cout << current->data;
+                            std::cout << current->info.data;
                     }
                     else
                         std::cout << ';';
                     current = current->next;
                 }
-                setCursorPosition(head->x, head->y);
+                setCursorPosition(head->info.x, head->info.y);
             }
             else
             { // setCursorPosition(0, game.HEIGHT + 3);
@@ -328,7 +337,7 @@ public:
                     {
                         for (size_t j = 0; j < game.matrix[i].size(); j++)
                         {
-                            std::cout << game.matrix[i][j];
+                            std::cout << game.matrix[i][j] << " ";
                         }
                         std::cout << "\n";
                     }
@@ -339,8 +348,20 @@ public:
                     for (size_t i = 0; i < game.fog_Matrix.size(); i++)
                     {
                         for (size_t j = 0; j < game.fog_Matrix[i].size(); j++)
-                        {
-                            std::cout << game.fog_Matrix[i][j];
+                        {   
+                            //map[' '] = Color::WHITE;
+                            //setColor(map[' ']);
+                            if (game.fog_Matrix[i][j] == ' ' ||
+                                game.fog_Matrix[i][j] == ';' ||
+                                game.fog_Matrix[i][j] == '=' ||
+                                game.fog_Matrix[i][j] == 'F' ||
+                                game.fog_Matrix[i][j] == '&')
+                            {
+                                std::cout << game.fog_Matrix[i][j] << " ";
+                            }
+                            else
+                                std::cout << game.fog_Matrix[i][j] << "~";
+                            
                         }
                         std::cout << "\n";
                     }
@@ -355,13 +376,13 @@ public:
             system("cls");
 
             game.drawField();
-            setCursorPosition(game.fruit->x, game.fruit->y);
+            setCursorPosition(game.fruit.x, game.fruit.y);
             std::cout << "0";
 
             while (current)
             {
-                setCursorPosition(current->x, current->y);
-                std::cout << current->data;
+                setCursorPosition(current->info.x, current->info.y);
+                std::cout << current->info.data;
                 current = current->next;
             }
 
@@ -370,7 +391,7 @@ public:
 
         void checkRule(SHORT x, SHORT y)
         {
-            if (game.matrix[head->y + y][head->x + x] != ' ')
+            if (game.matrix[head->info.y + y][head->info.x + x] != ' ')
             {
                 std::cout << "\a";
                 setCursorPosition(30, 30);
@@ -383,7 +404,7 @@ public:
         std::vector<std::vector<char>> WarFog()
         {
             game.fog_Matrix = game.matrix;
-            drawCircle(game.fog_Matrix, head->y, head->x, INT_CAST(game.radius), ':');
+            drawCircle(game.fog_Matrix, head->info.y, head->info.x, INT_CAST(game.radius), ':');
 
             // for (size_t i = 0; i < game.fog_Matrix.size(); ++i)
             // {
@@ -517,11 +538,11 @@ int main()
     {
         srand(static_cast<unsigned>(time(nullptr)));
 
-        game.displayOld(false);
+        game.displayOld(true);
         snake.displayForward();
         snake.keyScan();
         snake.move();
-        game.WarFog(true);
+        game.WarFog(false);
     }
 
     return 0;
