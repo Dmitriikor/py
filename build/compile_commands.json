@@ -1,0 +1,8 @@
+[
+{
+  "directory": "Z:/py/build",
+  "command": "C:\\ProgramData\\chocolatey\\bin\\g++.exe -std=gnu++23 -o CMakeFiles\\S_n.dir\\S_n.cpp.obj -c Z:\\py\\S_n.cpp",
+  "file": "Z:\\py\\S_n.cpp",
+  "output": "CMakeFiles\\S_n.dir\\S_n.cpp.obj"
+}
+]

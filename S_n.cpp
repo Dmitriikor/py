@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 #include <execution>
+#include "S_n_2.cpp"
+
 
 #define INT_CAST(x) static_cast<int>(x)
 #define SHORT_CAST(x) static_cast<SHORT>(x)
