@@ -68,7 +68,11 @@
     "numeric": "cpp",
     "queue": "cpp",
     "ranges": "cpp",
-    "span": "cpp"
+    "span": "cpp",
+    "chrono": "cpp",
+    "forward_list": "cpp",
+    "string": "cpp",
+    "sstream": "cpp"
 },
 "C_Cpp.default.cppStandard": "c++23",
 "C_Cpp.default.cStandard": "c23",

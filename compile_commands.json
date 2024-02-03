@@ -3,5 +3,10 @@
     "directory": "Z:/py/",
     "command": "\"C:/Program Files/LLVM/bin/clang++.exe\" -x c++ \"Z:/py/S_n.cpp\" -std=c++23 -Wall -fms-compatibility-version=19.10 -Wmicrosoft -Wno-invalid-token-paste -Wno-unknown-pragmas -Wno-unused-value -fsyntax-only \"-DUNICODE\" \"-D_UNICODE\" \"-D_MT\" \"-D_DLL\" \"-D_DEBUG\" \"-D_CONSOLE\" \"-D_DEBUG_FUNCTIONAL_MACHINERY\" -isystem\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.32919/include\" -isystem\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.32919/atlmfc/include\" -isystem\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/VS/include\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//ucrt\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//um\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//shared\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//winrt\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//cppwinrt\"",
     "file": "Z:/py/S_n.cpp"
+  },
+  {
+    "directory": "Z:/py/",
+    "command": "\"C:/Program Files/LLVM/bin/clang++.exe\" -x c++ \"Z:/py/S_n_2.cpp\" -std=c++23 -Wall -fms-compatibility-version=19.10 -Wmicrosoft -Wno-invalid-token-paste -Wno-unknown-pragmas -Wno-unused-value -fsyntax-only \"-DUNICODE\" \"-D_UNICODE\" \"-D_MT\" \"-D_DLL\" \"-D_DEBUG\" \"-D_CONSOLE\" \"-D_DEBUG_FUNCTIONAL_MACHINERY\" -isystem\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.32919/include\" -isystem\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.32919/atlmfc/include\" -isystem\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/VS/include\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//ucrt\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//um\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//shared\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//winrt\" -isystem\"C:/Program Files (x86)/Windows Kits/10/Include//cppwinrt\"",
+    "file": "Z:/py/S_n_2.cpp"
   }
 ]
