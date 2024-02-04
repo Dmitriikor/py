@@ -10,6 +10,8 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
+#include <list>
+#include <deque>
 
 #define INT_CAST(x) static_cast<int>(x)
 #define SHORT_CAST(x) static_cast<SHORT>(x)
@@ -70,7 +72,8 @@ public:
     vecWorker(std::vector<Block_2>& general) : general_vW(general) {}
     vecWorker& operator=(const vecWorker& other) 
     {
-        if (this != &other) {
+        if (this != &other) 
+        {
             general_vW = other.general_vW;
         }
         return *this;
@@ -132,8 +135,10 @@ class Snake_2
     std::vector<Block_2>& general_sn;
     int& Pressed_Key;
     size_t index = 0;
-    Block_2 head = Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY);
-    Block_2 tail = head;
+    std::list<Block_2> list;
+    Block_2 head;
+    Block_2 tail;
+
     Block_2 fruit= Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(1), SHORT_CAST(1)), FRUIT);
 
     void move()
@@ -197,7 +202,13 @@ public:
     Snake_2();
     Snake_2(std::vector<Block_2>& general, int& Pressed_Key, vecWorker& v) : general_sn(general), 
                                                                             Pressed_Key(Pressed_Key), 
-                                                                            v(v) {}
+                                                                            v(v) 
+    {
+        list.emplace_front(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
+        list.emplace_back(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
+        //list.begin();
+        //list.end();
+    }
 
     Snake_2& operator=(const Snake_2& other) 
     {
@@ -261,6 +272,13 @@ public:
     }
 };
 
+std::ostream& operator<<(std::ostream& ostr, const std::list<int>& list)
+{
+    for (auto& i : list)
+        ostr << ' ' << i;
+
+    return ostr;
+};
 
 int main() 
 {
@@ -280,9 +298,40 @@ try
         game_2.print();
         Sleep(300);
     }
+
     // {
     //     auto start = std::chrono::steady_clock::now();
-    //     game_2.generateCoordinates_NON();
+
+    //     // Block_2 test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
+    //     // std::list<Block_2> list{test, test, test, test, test, test, test, test, test, test};
+    //     // for (size_t i = 0; i < 100000; i++)
+    //     // {
+    //     // auto it = list.end();
+    //     // --it;
+    //     // list.splice(list.begin(), list, it, list.end());
+    //     // }
+            // Функция выполнялась NON = 4 миллисекунд.
+
+    //     auto end = std::chrono::steady_clock::now();
+    //     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    //     std::cout << "Функция выполнялась NON = " << duration.count() << " миллисекунд." << std::endl;
+    // }
+    // {
+    //     auto start = std::chrono::steady_clock::now();
+
+    //     // Block_2 test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
+    //     // std::deque<Block_2> q{test, test, test, test, test, test, test, test, test, test};
+    //     // for (size_t i = 0; i < 100000; i++)
+    //     // {
+    //     //     Block_2 to_swap_back = q.back();
+    //     //     Block_2 to_swap_front = q.front();
+    //     //     q.push_front(to_swap_back);
+    //     //     q.pop_back();
+    //     //     q.push_back(to_swap_front);
+    //     //     q.pop_back();
+    //     // }
+            //Функция выполнялась NON = 38 миллисекунд.
+
     //     auto end = std::chrono::steady_clock::now();
     //     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     //     std::cout << "Функция выполнялась NON = " << duration.count() << " миллисекунд." << std::endl;
