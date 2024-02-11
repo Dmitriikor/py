@@ -179,10 +179,10 @@ class Snake_2
 
             v.set(head);
             old_tail.symbol = EMPTY;
-            old_head.symbol = EMPTY;
+            //old_head.symbol = EMPTY;
             v.set(tail);
             v.set(old_tail);
-            v.set(old_head);
+            //v.set(old_head);
             v.set(fruit);
     }
 
@@ -191,9 +191,9 @@ class Snake_2
         if (head == tail)
             return;
 
-        tail.coord.first = head.coord.first;
-        tail.coord.second = head.coord.second;
-        tail.symbol = head.symbol;
+        auto it = list.end();
+        --it;
+        list.splice(list.begin(), list, it, list.end());
     }
 
 
@@ -204,8 +204,8 @@ public:
                                                                             Pressed_Key(Pressed_Key), 
                                                                             v(v) 
     {
-        list.emplace_front(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
-        list.emplace_back(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
+        head = list.emplace_front(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
+        tail = list.emplace_back(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
         //list.begin();
         //list.end();
     }
