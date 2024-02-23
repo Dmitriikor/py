@@ -73,7 +73,7 @@ class vecWorker
     friend class Game_2;
     friend class Snake_2;
     friend class Block_2;
-
+    size_t pos = 0;
     std::vector<Block_2> &general_vW;
 
 public:
@@ -88,6 +88,22 @@ public:
         return *this;
     }
 
+    Block_2& findNextFree()
+    {
+        size_t stop = general_vW.size(); // we set stop to the size of the vector
+
+        while (general_vW[pos].symbol != EMPTY && stop != 0) //we check if the symbol is empty and 
+                                                             //if we haven't reached the end  
+        {
+            ++pos;
+            if(pos == general_vW.size())
+            {
+                pos = 0;
+            }
+            --stop;
+        }
+        return general_vW[pos++]; //++pos = pos + 1 after access to pos
+    }
     void set(Block_2 &block)
     {
         general_vW[block.coord.first * COLS + block.coord.second].symbol = block.symbol;
@@ -157,8 +173,9 @@ class Snake_2
     size_t index = 0;
     std::list<Block_2> list;
 
+
     //TODO взять координаты из vecWorker
-    Block_2 fruit = Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(1), SHORT_CAST(1)), FRUIT);
+    Block_2 fruit = Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
 
     void move()
     {
@@ -175,22 +192,18 @@ class Snake_2
         SHORT tempX = list.begin()->coord.second + x;
         SHORT tempY = list.begin()->coord.first + y;
 
-        Block_2 old_head = list.front();
         Block_2 old_tail;
-
-        if (list.size() == 1)
-            old_tail = old_head;
-        else
-            old_tail = list.back();
+        auto it = list.end();
+        --it;
+        old_tail = *it;
+        
 
         if (tempX == fruit.coord.second && tempY == fruit.coord.first)
         {
             // fruit_Eat();
-
-            fruit.symbol = SNEAKE_BODY;
-            list.begin()->coord.first = fruit.coord.first;
-            list.begin()->coord.second = fruit.coord.second;
-
+            
+            list.push_front(fruit);
+            list.front().symbol = SNEAKE_BODY;
             v.set(*list.begin());
 
             return;
@@ -215,9 +228,16 @@ class Snake_2
 
     void moveTailToBeginning()
     {
-        auto it = list.end();
-        --it;
-        list.splice(list.begin(), list, it, list.end());
+        std::list<Block_2> list2;
+
+        Block_2 lastElement = list.back();
+        lastElement.coord.first = list.front().coord.first;
+        lastElement.coord.second = list.front().coord.second;
+
+        list.pop_back();
+        list.push_front(lastElement);
+
+        list = list;
     }
 
 public:
@@ -339,11 +359,11 @@ int main()
         Game_2 game_2;
         while (true)
         {
-            system("cls");
             game_2.keyScan();
             game_2.move();
             game_2.print();
             Sleep(300);
+            //system("cls");
         }
 
         // {
