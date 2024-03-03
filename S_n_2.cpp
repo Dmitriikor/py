@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <list>
 #include <deque>
+#include <unordered_map>
 
 #define INT_CAST(x) static_cast<int>(x)
 #define SHORT_CAST(x) static_cast<SHORT>(x)
@@ -60,8 +61,16 @@ class Block_2
 
 public:
     char symbol;
+    size_t index;
+
+
+
+
     Block_2() = default;
     Block_2(std::pair<SHORT, SHORT> coord, char symbol) : coord(coord), symbol(symbol) {}
+    Block_2(std::pair<SHORT, SHORT> coord) : coord(coord) {}
+    Block_2(std::pair<SHORT, SHORT> coord, char symbol, size_t index) : coord(coord), symbol(symbol), index(index) {}
+
     bool operator==(const Block_2 &other) const
     {
         return coord == other.coord && symbol == other.symbol;
@@ -73,12 +82,15 @@ class vecWorker
     friend class Game_2;
     friend class Snake_2;
     friend class Block_2;
-    size_t pos = 0;
+    size_t pos = 1;
     std::vector<Block_2> &general_vW;
 
 public:
     vecWorker() = default;
-    vecWorker(std::vector<Block_2> &general) : general_vW(general) {}
+    vecWorker(std::vector<Block_2> &general) : general_vW(general) 
+    {
+    }
+
     vecWorker &operator=(const vecWorker &other)
     {
         if (this != &other)
@@ -88,22 +100,51 @@ public:
         return *this;
     }
 
+
+    //findNextFree->fruit
+    //set(fruit) for map
+    //snake move base on index Block_2 or save vector logic
+    
+
     Block_2& findNextFree()
     {
-        size_t stop = general_vW.size(); // we set stop to the size of the vector
+        
+        std::unordered_map<char, std::vector<Block_2>> map;
 
-        while (general_vW[pos].symbol != EMPTY && stop != 0) //we check if the symbol is empty and 
-                                                             //if we haven't reached the end  
+
+        std::random_device rd;
+        std::mt19937 g(rd());
+        for (size_t i = 0; i < general_vW.size(); i++)
         {
-            ++pos;
-            if(pos == general_vW.size())
-            {
-                pos = 0;
-            }
-            --stop;
+            map[general_vW[i].symbol].push_back(general_vW[i]);
         }
-        return general_vW[pos++]; //++pos = pos + 1 after access to pos
+        std::shuffle(map[EMPTY].begin(), map[EMPTY].end(), g);
+        
+        Block_2 returnedVal = *map[EMPTY].begin();
+        map[EMPTY].erase(map[EMPTY].begin());
+        return returnedVal; // TODO ERROR FIX LATER
+
+        //size_t stop = 1; 
+        // while (general_vW[pos].symbol != EMPTY)                                                     
+        // {
+        //     std::uniform_int_distribution<size_t> rnd(0, general_vW.size() - 1);
+        //     pos = rnd(g);
+        //     if (stop == general_vW.size()*10)
+        //     {
+        //         throw std::exception("no free space");
+        //     }
+        //     ++stop;
+        // }
+        // return general_vW[pos]; //pos = pos + 1 after access to pos
     }
+    // void transferMap()
+    // {
+    //     for (size_t i = 0; i < general_vW.size(); i++)
+    //     {
+    //         map[general_vW[i].symbol].push_back(general_vW[i]);
+    //     }
+        
+    // }
     void set(Block_2 &block)
     {
         general_vW[block.coord.first * COLS + block.coord.second].symbol = block.symbol;
@@ -114,16 +155,19 @@ public:
     }
     void generateCoordinates_NON()
     {
+        size_t index = 0;
         for (SHORT i = 0; i < ROWS; ++i)
         {
             for (SHORT j = 0; j < COLS; ++j)
             {
-                general_vW.push_back(Block_2(std::pair<SHORT, SHORT>(i, j), EMPTY));
+                general_vW.push_back(Block_2(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
+                index++;
             }
         }
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(general_vW.begin(), general_vW.end(), g);
+        // std::random_device rd;
+        // std::mt19937 g(rd());
+        // std::shuffle(general_vW.begin(), general_vW.end(), g);
+        
     }
     void drawField()
     {
@@ -167,7 +211,7 @@ class Snake_2
 {
     friend class Game_2;
 
-    vecWorker v;
+    vecWorker& v;
     std::vector<Block_2> &general_sn;
     Direction &currentDirection;
     size_t index = 0;
@@ -175,7 +219,8 @@ class Snake_2
 
 
     //TODO взять координаты из vecWorker
-    Block_2 fruit = Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+    bool isFruitNon = true; 
+    Block_2 fruit;
 
     void move()
     {
@@ -196,6 +241,14 @@ class Snake_2
         auto it = list.end();
         --it;
         old_tail = *it;
+
+        if(isFruitNon)
+        {
+            fruit = v.findNextFree(); //Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            fruit.symbol = FRUIT;
+            v.set(fruit);
+            isFruitNon = false;
+        }
         
 
         if (tempX == fruit.coord.second && tempY == fruit.coord.first)
@@ -205,6 +258,10 @@ class Snake_2
             list.push_front(fruit);
             list.front().symbol = SNEAKE_BODY;
             v.set(*list.begin());
+
+            fruit = v.findNextFree(); //Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            fruit.symbol = FRUIT;
+            v.set(fruit);
 
             return;
         }
@@ -308,6 +365,10 @@ class Game_2
 
 
 public:
+    // void transferMap()
+    // {
+    //     v.transferMap();
+    // }
     void move()
     {
         s.move();
@@ -353,17 +414,20 @@ int main()
     std::cin.tie(nullptr);
     std::cout.tie(nullptr);
     SetConsoleOutputCP(1251);
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
     try
     {
         Game_2 game_2;
         while (true)
         {
-            game_2.keyScan();
-            game_2.move();
-            game_2.print();
             Sleep(300);
             //system("cls");
+            SetConsoleCursorPosition(console, COORD(0, 0)); //flicker fix
+            game_2.keyScan();
+            game_2.move();
+            //game_2.transferMap();
+            game_2.print();
         }
 
         // {

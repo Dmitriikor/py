@@ -73,7 +73,9 @@
     "forward_list": "cpp",
     "string": "cpp",
     "sstream": "cpp",
-    "list": "cpp"
+    "list": "cpp",
+    "unordered_map": "cpp",
+    "xhash": "cpp"
 },
 "C_Cpp.default.cppStandard": "c++23",
 "C_Cpp.default.cStandard": "c23",
