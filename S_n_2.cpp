@@ -84,11 +84,18 @@ class vecWorker
     friend class Block_2;
     size_t pos = 1;
     std::vector<Block_2> &general_vW;
+    std::unordered_map<char, std::vector<Block_2>> map_test;
+
+
 
 public:
     vecWorker() = default;
     vecWorker(std::vector<Block_2> &general) : general_vW(general) 
     {
+        map_test[EMPTY].reserve(1);
+        map_test [BORDER].reserve(1); 
+        map_test [SNEAKE_BODY].reserve(1); 
+        map_test [FRUIT].reserve(1); 
     }
 
     vecWorker &operator=(const vecWorker &other)
@@ -108,21 +115,25 @@ public:
 
     Block_2& findNextFree()
     {
-        
-        std::unordered_map<char, std::vector<Block_2>> map;
+        if(map_test[EMPTY].empty())
+        {
+            return map_test[EMPTY].back();
+        }
 
+        //std::unordered_map<char, std::vector<Block_2>> map;
 
         std::random_device rd;
         std::mt19937 g(rd());
-        for (size_t i = 0; i < general_vW.size(); i++)
-        {
-            map[general_vW[i].symbol].push_back(general_vW[i]);
-        }
-        std::shuffle(map[EMPTY].begin(), map[EMPTY].end(), g);
-        
-        Block_2 returnedVal = *map[EMPTY].begin();
-        map[EMPTY].erase(map[EMPTY].begin());
-        return returnedVal; // TODO ERROR FIX LATER
+        std::shuffle(map_test[EMPTY].begin(), map_test[EMPTY].end(), g);
+
+        // for (size_t i = 0; i < general_vW.size(); i++)
+        // {
+        //     map[general_vW[i].symbol].push_back(general_vW[i]);
+        // }
+        //Block_2 returnedVal = *map_test[EMPTY].begin();
+        //map_test[EMPTY].erase(map_test[EMPTY].begin());
+
+        return *map_test[EMPTY].begin();
 
         //size_t stop = 1; 
         // while (general_vW[pos].symbol != EMPTY)                                                     
@@ -142,8 +153,7 @@ public:
     //     for (size_t i = 0; i < general_vW.size(); i++)
     //     {
     //         map[general_vW[i].symbol].push_back(general_vW[i]);
-    //     }
-        
+    //     }  
     // }
     void set(Block_2 &block)
     {
@@ -161,6 +171,7 @@ public:
             for (SHORT j = 0; j < COLS; ++j)
             {
                 general_vW.push_back(Block_2(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
+                map_test[EMPTY].push_back(Block_2(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
                 index++;
             }
         }
@@ -178,22 +189,88 @@ public:
             border.coord.first = 0;
             border.coord.second = i;
             set(border);
+
+            setMap(border, EMPTY, BORDER);
+            //TODO copy code, move to function
+            // for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
+            // {
+            //     if (it->coord == border.coord)
+            //     {
+            //         it->symbol = BORDER;
+            //         map_test[BORDER].push_back(*it);
+            //         map_test[EMPTY].erase(it);
+            //         break;
+            //     }
+            // }
+
         }
         for (SHORT i = 0; i < ROWS; i++)
         {
             border.coord.first = i;
             border.coord.second = 0;
             set(border);
+
+            //TODO copy code, move to function
+            for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
+            {
+                if (it->coord == border.coord)
+                {
+                    it->symbol = BORDER;
+                    map_test[BORDER].push_back(*it);
+                    map_test[EMPTY].erase(it);
+                    break;
+                }
+            }
+
             border.coord.second = COLS - 1;
             set(border);
+
+            //TODO copy code, move to function
+            for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
+            {
+                if (it->coord == border.coord)
+                {
+                    it->symbol = BORDER;
+                    map_test[BORDER].push_back(*it);
+                    map_test[EMPTY].erase(it);
+                    break;
+                }
+            }
         }
         for (SHORT i = 0; i < COLS; i++)
         {
             border.coord.first = ROWS - 1;
             border.coord.second = i;
             set(border);
+
+            //TODO copy code, move to function
+            for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
+            {
+                if (it->coord == border.coord)
+                {
+                    it->symbol = BORDER;
+                    map_test[BORDER].push_back(*it);
+                    map_test[EMPTY].erase(it);
+                    break;
+                }
+            }
         }
     }
+void setMap(Block_2 &block, char mapKey, char insertKey)
+{
+    for (auto it = map_test[mapKey].begin(); it != map_test[mapKey].end(); ++it)
+    {
+        if (it->coord == block.coord)
+        {
+            it->symbol = insertKey;
+            map_test[insertKey].push_back(*it);
+            map_test[mapKey].erase(it);
+            return;
+        }
+    }
+    throw std::logic_error("setMap error");
+}
+
     void print()
     {
         for (int i = 0; i < ROWS; ++i)
@@ -244,7 +321,10 @@ class Snake_2
 
         if(isFruitNon)
         {
+            v.setMap(*list.begin(), EMPTY, SNEAKE_BODY);
             fruit = v.findNextFree(); //Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            v.setMap(fruit, EMPTY, FRUIT);
+
             fruit.symbol = FRUIT;
             v.set(fruit);
             isFruitNon = false;
@@ -259,7 +339,10 @@ class Snake_2
             list.front().symbol = SNEAKE_BODY;
             v.set(*list.begin());
 
+            v.setMap(fruit, FRUIT, SNEAKE_BODY);
+
             fruit = v.findNextFree(); //Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            v.setMap(fruit, EMPTY, FRUIT);
             fruit.symbol = FRUIT;
             v.set(fruit);
 
@@ -304,6 +387,7 @@ public:
                                                                                   v(v)
     {
         list.emplace_front(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
+
         // list.begin();
         // list.end();
     }
@@ -382,14 +466,27 @@ public:
     }
     void print()
     {
-        for (int i = 0; i < ROWS; ++i)
+        // for (int i = 0; i < ROWS; ++i)
+        // {
+        //     for (int j = 0; j < COLS; ++j)
+        //     {
+        //         std::cout << general[i * COLS + j].symbol << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        std::vector <std::vector<char>> toPrint;
+        
+        for(auto i = v.map_test.begin(); i != v.map_test.end(); ++i)
         {
-            for (int j = 0; j < COLS; ++j)
+            for(auto j = i->second.begin(); j != i->second.end(); ++j)
             {
-                std::cout << general[i * COLS + j].symbol << " ";
+                toPrint[j->coord.first][j->coord.second] = j->symbol;
             }
-            std::cout << std::endl;
         }
+
+
+
+
     }
     Game_2() : v(general), s(general, currentDirection, v), currentDirection(Direction::UP)
     {
