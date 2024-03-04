@@ -51,11 +51,11 @@ enum class Direction
 static const SHORT ROWS = 15; // строк
 static const SHORT COLS = 15; // столбцов
 
-class Block_2
+class FieldCell
 {
     friend class Game_2;
     friend class Snake_2;
-    friend class vecWorker;
+    friend class Field;
 
     std::pair<SHORT, SHORT> coord;
 
@@ -66,31 +66,31 @@ public:
 
 
 
-    Block_2() = default;
-    Block_2(std::pair<SHORT, SHORT> coord, char symbol) : coord(coord), symbol(symbol) {}
-    Block_2(std::pair<SHORT, SHORT> coord) : coord(coord) {}
-    Block_2(std::pair<SHORT, SHORT> coord, char symbol, size_t index) : coord(coord), symbol(symbol), index(index) {}
+    FieldCell() = default;
+    FieldCell(std::pair<SHORT, SHORT> coord, char symbol) : coord(coord), symbol(symbol) {}
+    FieldCell(std::pair<SHORT, SHORT> coord) : coord(coord) {}
+    FieldCell(std::pair<SHORT, SHORT> coord, char symbol, size_t index) : coord(coord), symbol(symbol), index(index) {}
 
-    bool operator==(const Block_2 &other) const
+    bool operator==(const FieldCell &other) const
     {
         return coord == other.coord && symbol == other.symbol;
     }
 };
 
-class vecWorker
+class Field
 {
     friend class Game_2;
     friend class Snake_2;
-    friend class Block_2;
+    friend class FieldCell;
     size_t pos = 1;
-    std::vector<Block_2> &general_vW;
-    std::unordered_map<char, std::vector<Block_2>> map_test;
+    std::vector<FieldCell> &general_vW;
+    std::unordered_map<char, std::vector<FieldCell>> map_test;
 
 
 
 public:
-    vecWorker() = default;
-    vecWorker(std::vector<Block_2> &general) : general_vW(general) 
+    Field() = default;
+    Field(std::vector<FieldCell> &general) : general_vW(general) 
     {
         map_test[EMPTY].reserve(1);
         map_test [BORDER].reserve(1); 
@@ -98,7 +98,7 @@ public:
         map_test [FRUIT].reserve(1); 
     }
 
-    vecWorker &operator=(const vecWorker &other)
+    Field &operator=(const Field &other)
     {
         if (this != &other)
         {
@@ -110,30 +110,35 @@ public:
 
     //findNextFree->fruit
     //set(fruit) for map
-    //snake move base on index Block_2 or save vector logic
+    //snake move base on index FieldCell or save vector logic
     
 
-    Block_2& findNextFree()
+    FieldCell& findNextFree()
     {
         if(map_test[EMPTY].empty())
         {
             return map_test[EMPTY].back();
         }
 
-        //std::unordered_map<char, std::vector<Block_2>> map;
+        //std::unordered_map<char, std::vector<FieldCell>> map;
 
         std::random_device rd;
         std::mt19937 g(rd());
-        std::shuffle(map_test[EMPTY].begin(), map_test[EMPTY].end(), g);
+
+        std::uniform_int_distribution<size_t> rnd(0, map_test[EMPTY].size() - 1);
+        pos = rnd(g);
+        //std::shuffle(map_test[EMPTY].begin(), map_test[EMPTY].end(), g);
+
+        
 
         // for (size_t i = 0; i < general_vW.size(); i++)
         // {
         //     map[general_vW[i].symbol].push_back(general_vW[i]);
         // }
-        //Block_2 returnedVal = *map_test[EMPTY].begin();
+        //FieldCell returnedVal = *map_test[EMPTY].begin();
         //map_test[EMPTY].erase(map_test[EMPTY].begin());
 
-        return *map_test[EMPTY].begin();
+        return map_test[EMPTY][pos];
 
         //size_t stop = 1; 
         // while (general_vW[pos].symbol != EMPTY)                                                     
@@ -155,11 +160,11 @@ public:
     //         map[general_vW[i].symbol].push_back(general_vW[i]);
     //     }  
     // }
-    void set(Block_2 &block)
+    void set(FieldCell &block)
     {
         general_vW[block.coord.first * COLS + block.coord.second].symbol = block.symbol;
     }
-    Block_2 get(SHORT x, SHORT y)
+    FieldCell get(SHORT x, SHORT y)
     {
         return general_vW[x * COLS + y];
     }
@@ -170,8 +175,8 @@ public:
         {
             for (SHORT j = 0; j < COLS; ++j)
             {
-                general_vW.push_back(Block_2(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
-                map_test[EMPTY].push_back(Block_2(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
+                general_vW.push_back(FieldCell(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
+                map_test[EMPTY].push_back(FieldCell(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
                 index++;
             }
         }
@@ -182,7 +187,7 @@ public:
     }
     void drawField()
     {
-        Block_2 border(std::pair<SHORT, SHORT>(SHORT_CAST(0), SHORT_CAST(0)), BORDER);
+        FieldCell border(std::pair<SHORT, SHORT>(SHORT_CAST(0), SHORT_CAST(0)), BORDER);
 
         for (SHORT i = 0; i < COLS; i++)
         {
@@ -256,7 +261,7 @@ public:
             }
         }
     }
-void setMap(Block_2 &block, char mapKey, char insertKey)
+void setMap(FieldCell &block, char mapKey, char insertKey)
 {
     for (auto it = map_test[mapKey].begin(); it != map_test[mapKey].end(); ++it)
     {
@@ -288,16 +293,16 @@ class Snake_2
 {
     friend class Game_2;
 
-    vecWorker& v;
-    std::vector<Block_2> &general_sn;
-    Direction &currentDirection;
+    Field& v;
+    std::vector<FieldCell> &general_sn;
+    Direction currentDirection;
     size_t index = 0;
-    std::list<Block_2> list;
+    std::list<FieldCell> list;
 
 
-    //TODO взять координаты из vecWorker
+    //TODO взять координаты из Field
     bool isFruitNon = true; 
-    Block_2 fruit;
+    FieldCell fruit;
 
     void move()
     {
@@ -314,7 +319,7 @@ class Snake_2
         SHORT tempX = list.begin()->coord.second + x;
         SHORT tempY = list.begin()->coord.first + y;
 
-        Block_2 old_tail;
+        FieldCell old_tail;
         auto it = list.end();
         --it;
         old_tail = *it;
@@ -322,7 +327,7 @@ class Snake_2
         if(isFruitNon)
         {
             v.setMap(*list.begin(), EMPTY, SNEAKE_BODY);
-            fruit = v.findNextFree(); //Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            fruit = v.findNextFree(); //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
             v.setMap(fruit, EMPTY, FRUIT);
 
             fruit.symbol = FRUIT;
@@ -341,7 +346,7 @@ class Snake_2
 
             v.setMap(fruit, FRUIT, SNEAKE_BODY);
 
-            fruit = v.findNextFree(); //Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            fruit = v.findNextFree(); //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
             v.setMap(fruit, EMPTY, FRUIT);
             fruit.symbol = FRUIT;
             v.set(fruit);
@@ -368,9 +373,9 @@ class Snake_2
 
     void moveTailToBeginning()
     {
-        std::list<Block_2> list2;
+        std::list<FieldCell> list2;
 
-        Block_2 lastElement = list.back();
+        FieldCell lastElement = list.back();
         lastElement.coord.first = list.front().coord.first;
         lastElement.coord.second = list.front().coord.second;
 
@@ -382,11 +387,11 @@ class Snake_2
 
 public:
     Snake_2();
-    Snake_2(std::vector<Block_2> &general, Direction &currentDirection, vecWorker &v) : general_sn(general),
+    Snake_2(std::vector<FieldCell> &general, Direction currentDirection, Field &v) : general_sn(general),
                                                                                   currentDirection(currentDirection),
                                                                                   v(v)
     {
-        list.emplace_front(Block_2(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
+        list.emplace_front(FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
 
         // list.begin();
         // list.end();
@@ -407,12 +412,12 @@ public:
 class Game_2
 {
     friend class Snake_2;
-    friend class vecWorker;
-    friend class Block_2;
-    vecWorker v;
+    friend class Field;
+    friend class FieldCell;
+    Field v;
     Snake_2 s;
-    std::vector<Block_2> general;
-    Direction currentDirection;
+    std::vector<FieldCell> general;
+    //Direction currentDirection;
 
    static Direction keyScan_2()
     {
@@ -461,34 +466,43 @@ public:
     {
         Direction temp = keyScan_2();
         if(temp != Direction::NONE)
-            currentDirection = temp;
+            s.currentDirection = temp;
         
     }
     void print()
     {
-        // for (int i = 0; i < ROWS; ++i)
-        // {
-        //     for (int j = 0; j < COLS; ++j)
-        //     {
-        //         std::cout << general[i * COLS + j].symbol << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-        std::vector <std::vector<char>> toPrint;
-        
-        for(auto i = v.map_test.begin(); i != v.map_test.end(); ++i)
+        for (int i = 0; i < ROWS; ++i)
         {
-            for(auto j = i->second.begin(); j != i->second.end(); ++j)
+            for (int j = 0; j < COLS; ++j)
             {
-                toPrint[j->coord.first][j->coord.second] = j->symbol;
+                std::cout << general[i * COLS + j].symbol << " ";
             }
+            std::cout << std::endl;
         }
 
 
+        // std::vector <std::vector<char>> toPrint(ROWS, std::vector<char>(COLS, ' '));
 
+        // for(auto i = v.map_test.begin(); i != v.map_test.end(); ++i)
+        // {
+        //     for(auto j = i->second.begin(); j != i->second.end(); ++j)
+        //     {
+        //         toPrint[j->coord.first][j->coord.second] = j->symbol;
+        //     }
+        // }
 
+        // //TODO ade sn from list
+
+        // for (size_t i = 0; i < toPrint.size(); i++)
+        // {
+        //     for (size_t j = 0; j < toPrint[i].size(); j++)
+        //     {
+        //         std::cout << toPrint[i][j];
+        //     }
+        //     std::cout << std::endl;
+        // }
     }
-    Game_2() : v(general), s(general, currentDirection, v), currentDirection(Direction::UP)
+    Game_2() : v(general), s(general, Direction::UP, v)
     {
         general.reserve(UNSIGNED_CAST(ROWS) * UNSIGNED_CAST(COLS));
 
@@ -529,8 +543,8 @@ int main()
 
         // {
         //     auto start = std::chrono::steady_clock::now();
-        //     Block_2 test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
-        //     std::list<Block_2> list {test, test, test, test, test, test, test, test, test, test};
+        //     FieldCell test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
+        //     std::list<FieldCell> list {test, test, test, test, test, test, test, test, test, test};
         //     for (size_t i = 0; i < 100000; i++)
         //     {
         //         auto it = list.end();
@@ -544,12 +558,12 @@ int main()
         // }
         // {
         //     auto start = std::chrono::steady_clock::now();
-        //     Block_2 test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
-        //     std::deque<Block_2> q  {test, test, test, test, test, test, test, test, test, test};
+        //     FieldCell test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
+        //     std::deque<FieldCell> q  {test, test, test, test, test, test, test, test, test, test};
         //     for (size_t i = 0; i < 100000; i++)
         //     {
         //         //auto to_swap_back = q.back();
-        //         auto to_swap_front = Block_2(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY); //= q.front();
+        //         auto to_swap_front = FieldCell(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY); //= q.front();
         //         q.push_front(to_swap_front);
         //         q.pop_back();
         //         //q.push_back(to_swap_front);
