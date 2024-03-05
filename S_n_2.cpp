@@ -83,19 +83,13 @@ class Field
     friend class Snake_2;
     friend class FieldCell;
     size_t pos = 1;
-    std::vector<FieldCell> &general_vW;
-    std::unordered_map<char, std::vector<FieldCell>> map_test;
-
-
+    std::vector<FieldCell> general_vW;
+    std::vector<FieldCell*> vectorOf_EMPTY;
 
 public:
-    Field() = default;
-    Field(std::vector<FieldCell> &general) : general_vW(general) 
+    Field()
     {
-        map_test[EMPTY].reserve(1);
-        map_test [BORDER].reserve(1); 
-        map_test [SNEAKE_BODY].reserve(1); 
-        map_test [FRUIT].reserve(1); 
+        general_vW.reserve(UNSIGNED_CAST(ROWS) * UNSIGNED_CAST(COLS));
     }
 
     Field &operator=(const Field &other)
@@ -113,53 +107,17 @@ public:
     //snake move base on index FieldCell or save vector logic
     
 
-    FieldCell& findNextFree()
+    size_t findNextFree()
     {
-        if(map_test[EMPTY].empty())
-        {
-            return map_test[EMPTY].back();
-        }
-
-        //std::unordered_map<char, std::vector<FieldCell>> map;
-
         std::random_device rd;
         std::mt19937 g(rd());
 
-        std::uniform_int_distribution<size_t> rnd(0, map_test[EMPTY].size() - 1);
+        std::uniform_int_distribution<size_t> rnd(0, vectorOf_EMPTY.size() - 1);
         pos = rnd(g);
-        //std::shuffle(map_test[EMPTY].begin(), map_test[EMPTY].end(), g);
 
-        
-
-        // for (size_t i = 0; i < general_vW.size(); i++)
-        // {
-        //     map[general_vW[i].symbol].push_back(general_vW[i]);
-        // }
-        //FieldCell returnedVal = *map_test[EMPTY].begin();
-        //map_test[EMPTY].erase(map_test[EMPTY].begin());
-
-        return map_test[EMPTY][pos];
-
-        //size_t stop = 1; 
-        // while (general_vW[pos].symbol != EMPTY)                                                     
-        // {
-        //     std::uniform_int_distribution<size_t> rnd(0, general_vW.size() - 1);
-        //     pos = rnd(g);
-        //     if (stop == general_vW.size()*10)
-        //     {
-        //         throw std::exception("no free space");
-        //     }
-        //     ++stop;
-        // }
-        // return general_vW[pos]; //pos = pos + 1 after access to pos
+        return pos;
     }
-    // void transferMap()
-    // {
-    //     for (size_t i = 0; i < general_vW.size(); i++)
-    //     {
-    //         map[general_vW[i].symbol].push_back(general_vW[i]);
-    //     }  
-    // }
+
     void set(FieldCell &block)
     {
         general_vW[block.coord.first * COLS + block.coord.second].symbol = block.symbol;
@@ -176,7 +134,6 @@ public:
             for (SHORT j = 0; j < COLS; ++j)
             {
                 general_vW.push_back(FieldCell(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
-                map_test[EMPTY].push_back(FieldCell(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
                 index++;
             }
         }
@@ -195,19 +152,6 @@ public:
             border.coord.second = i;
             set(border);
 
-            setMap(border, EMPTY, BORDER);
-            //TODO copy code, move to function
-            // for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
-            // {
-            //     if (it->coord == border.coord)
-            //     {
-            //         it->symbol = BORDER;
-            //         map_test[BORDER].push_back(*it);
-            //         map_test[EMPTY].erase(it);
-            //         break;
-            //     }
-            // }
-
         }
         for (SHORT i = 0; i < ROWS; i++)
         {
@@ -215,64 +159,33 @@ public:
             border.coord.second = 0;
             set(border);
 
-            //TODO copy code, move to function
-            for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
-            {
-                if (it->coord == border.coord)
-                {
-                    it->symbol = BORDER;
-                    map_test[BORDER].push_back(*it);
-                    map_test[EMPTY].erase(it);
-                    break;
-                }
-            }
-
             border.coord.second = COLS - 1;
             set(border);
-
-            //TODO copy code, move to function
-            for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
-            {
-                if (it->coord == border.coord)
-                {
-                    it->symbol = BORDER;
-                    map_test[BORDER].push_back(*it);
-                    map_test[EMPTY].erase(it);
-                    break;
-                }
-            }
         }
         for (SHORT i = 0; i < COLS; i++)
         {
             border.coord.first = ROWS - 1;
             border.coord.second = i;
             set(border);
+        }
+    }
 
-            //TODO copy code, move to function
-            for (auto it = map_test[EMPTY].begin(); it != map_test[EMPTY].end(); ++it)
+    void genVectorOf_EMPTY()
+    {
+        for (SHORT i = 0; i < ROWS; ++i)
+        {
+            for (SHORT j = 0; j < COLS; ++j)
             {
-                if (it->coord == border.coord)
+                if (general_vW[i * COLS + j].symbol == EMPTY)
                 {
-                    it->symbol = BORDER;
-                    map_test[BORDER].push_back(*it);
-                    map_test[EMPTY].erase(it);
-                    break;
+                    vectorOf_EMPTY.push_back(&general_vW[i * COLS + j]);
                 }
             }
         }
     }
+
 void setMap(FieldCell &block, char mapKey, char insertKey)
 {
-    for (auto it = map_test[mapKey].begin(); it != map_test[mapKey].end(); ++it)
-    {
-        if (it->coord == block.coord)
-        {
-            it->symbol = insertKey;
-            map_test[insertKey].push_back(*it);
-            map_test[mapKey].erase(it);
-            return;
-        }
-    }
     throw std::logic_error("setMap error");
 }
 
@@ -294,7 +207,6 @@ class Snake_2
     friend class Game_2;
 
     Field& v;
-    std::vector<FieldCell> &general_sn;
     Direction currentDirection;
     size_t index = 0;
     std::list<FieldCell> list;
@@ -302,7 +214,7 @@ class Snake_2
 
     //TODO взять координаты из Field
     bool isFruitNon = true; 
-    FieldCell fruit;
+    FieldCell* fruit;
 
     void move()
     {
@@ -326,30 +238,25 @@ class Snake_2
 
         if(isFruitNon)
         {
-            v.setMap(*list.begin(), EMPTY, SNEAKE_BODY);
-            fruit = v.findNextFree(); //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
-            v.setMap(fruit, EMPTY, FRUIT);
+            fruit = v.vectorOf_EMPTY[v.findNextFree()]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
 
-            fruit.symbol = FRUIT;
-            v.set(fruit);
+            fruit->symbol = FRUIT;
+            v.set(*fruit);
             isFruitNon = false;
         }
         
 
-        if (tempX == fruit.coord.second && tempY == fruit.coord.first)
+        if (tempX == fruit->coord.second && tempY == fruit->coord.first)
         {
             // fruit_Eat();
             
-            list.push_front(fruit);
+            list.push_front(*fruit);
             list.front().symbol = SNEAKE_BODY;
             v.set(*list.begin());
 
-            v.setMap(fruit, FRUIT, SNEAKE_BODY);
-
-            fruit = v.findNextFree(); //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
-            v.setMap(fruit, EMPTY, FRUIT);
-            fruit.symbol = FRUIT;
-            v.set(fruit);
+            fruit = v.vectorOf_EMPTY[v.findNextFree()]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            fruit->symbol = FRUIT;
+            v.set(*fruit);
 
             return;
         }
@@ -365,7 +272,7 @@ class Snake_2
 //v.print();
         v.set(*list.begin());
 //v.print();
-        v.set(fruit);
+        v.set(*fruit);
 //v.print();
 
 
@@ -387,21 +294,16 @@ class Snake_2
 
 public:
     Snake_2();
-    Snake_2(std::vector<FieldCell> &general, Direction currentDirection, Field &v) : general_sn(general),
-                                                                                  currentDirection(currentDirection),
-                                                                                  v(v)
+    Snake_2(Direction currentDirection, Field &v) :currentDirection(currentDirection), v(v)
     {
         list.emplace_front(FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
-
-        // list.begin();
-        // list.end();
     }
 
     Snake_2 &operator=(const Snake_2 &other)
     {
         if (this != &other)
         {
-            general_sn = other.general_sn;
+            v.general_vW = other.v.general_vW;
             currentDirection = other.currentDirection;
             v = other.v;
         }
@@ -416,7 +318,6 @@ class Game_2
     friend class FieldCell;
     Field v;
     Snake_2 s;
-    std::vector<FieldCell> general;
     //Direction currentDirection;
 
    static Direction keyScan_2()
@@ -454,10 +355,7 @@ class Game_2
 
 
 public:
-    // void transferMap()
-    // {
-    //     v.transferMap();
-    // }
+
     void move()
     {
         s.move();
@@ -471,43 +369,14 @@ public:
     }
     void print()
     {
-        for (int i = 0; i < ROWS; ++i)
-        {
-            for (int j = 0; j < COLS; ++j)
-            {
-                std::cout << general[i * COLS + j].symbol << " ";
-            }
-            std::cout << std::endl;
-        }
-
-
-        // std::vector <std::vector<char>> toPrint(ROWS, std::vector<char>(COLS, ' '));
-
-        // for(auto i = v.map_test.begin(); i != v.map_test.end(); ++i)
-        // {
-        //     for(auto j = i->second.begin(); j != i->second.end(); ++j)
-        //     {
-        //         toPrint[j->coord.first][j->coord.second] = j->symbol;
-        //     }
-        // }
-
-        // //TODO ade sn from list
-
-        // for (size_t i = 0; i < toPrint.size(); i++)
-        // {
-        //     for (size_t j = 0; j < toPrint[i].size(); j++)
-        //     {
-        //         std::cout << toPrint[i][j];
-        //     }
-        //     std::cout << std::endl;
-        // }
+        v.print();
     }
-    Game_2() : v(general), s(general, Direction::UP, v)
+    
+    Game_2() : v(), s(Direction::UP, v)
     {
-        general.reserve(UNSIGNED_CAST(ROWS) * UNSIGNED_CAST(COLS));
-
         v.generateCoordinates_NON();
         v.drawField();
+        v.genVectorOf_EMPTY();
     }
 };
 
@@ -537,7 +406,6 @@ int main()
             SetConsoleCursorPosition(console, COORD(0, 0)); //flicker fix
             game_2.keyScan();
             game_2.move();
-            //game_2.transferMap();
             game_2.print();
         }
 
