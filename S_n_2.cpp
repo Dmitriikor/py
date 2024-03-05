@@ -86,6 +86,9 @@ public:
     Field()
     {
         general_vW.reserve(UNSIGNED_CAST(ROWS) * UNSIGNED_CAST(COLS));
+        generateCoordinates_NON();
+        drawField();
+        genVectorOf_EMPTY();
     }
 
     Field &operator=(const Field &other)
@@ -208,27 +211,13 @@ class Snake_2
 
     Field& v;
     Direction currentDirection;
-    size_t index = 0;
     std::list<FieldCell> list;
-
-    bool isFruitNon = true; 
     FieldCell fruit;
 
-    bool isFirst = true;
+    bool isFruitNon = true; 
 
     void move()
     {
-        {
-           
-                if(isFirst)
-                {
-                    isFirst = false;
-                    FieldCell block = *list.begin();
-                    auto it = std::find(v.vectorOf_EMPTY.begin(), v.vectorOf_EMPTY.end(), block);
-                    v.vectorOf_EMPTY.erase(it);
-                }
-        }
-
         SHORT x = 0, y = 0;
         if (currentDirection == (Direction::UP))
             y = -1;
@@ -242,10 +231,10 @@ class Snake_2
         SHORT tempX = list.begin()->coord.second + x;
         SHORT tempY = list.begin()->coord.first + y;
 
-        FieldCell old_tail;
+        
         auto it = list.end();
         --it;
-        old_tail = *it;
+        FieldCell old_tail = *it;
 
         if(isFruitNon)
         {
@@ -311,6 +300,10 @@ public:
     Snake_2(Direction currentDirection, Field &v) :currentDirection(currentDirection), v(v)
     {
         list.emplace_front(FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
+
+            FieldCell block = *list.begin();
+            auto it = std::find(v.vectorOf_EMPTY.begin(), v.vectorOf_EMPTY.end(), block);
+            v.vectorOf_EMPTY.erase(it);
     }
 
     Snake_2 &operator=(const Snake_2 &other)
@@ -332,7 +325,6 @@ class Game_2
     friend class FieldCell;
     Field v;
     Snake_2 s;
-    //Direction currentDirection;
 
    static Direction keyScan_2()
     {
@@ -366,10 +358,7 @@ class Game_2
         return Direction::NONE;
 
     }
-
-
 public:
-
     void move()
     {
         s.move();
@@ -385,12 +374,9 @@ public:
     {
         v.print();
     }
-    
-    Game_2() : v(), s(Direction::UP, v)
+     Game_2() : s(Direction::UP, v), v()
     {
-        v.generateCoordinates_NON();
-        v.drawField();
-        v.genVectorOf_EMPTY();
+
     }
 };
 
