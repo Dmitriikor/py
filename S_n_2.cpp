@@ -18,7 +18,6 @@
 #define SHORT_CAST(x) static_cast<SHORT>(x)
 #define UNSIGNED_CAST(x) static_cast<unsigned>(x)
 
-//!!! unordered map
 #define EMPTY ' '
 #define BORDER '#'
 #define SNEAKE_BODY '='
@@ -63,9 +62,6 @@ public:
     char symbol;
     size_t index;
 
-
-
-
     FieldCell() = default;
     FieldCell(std::pair<SHORT, SHORT> coord, char symbol) : coord(coord), symbol(symbol) {}
     FieldCell(std::pair<SHORT, SHORT> coord) : coord(coord) {}
@@ -73,7 +69,7 @@ public:
 
     bool operator==(const FieldCell &other) const
     {
-        return coord == other.coord && symbol == other.symbol;
+        return coord == other.coord;
     }
 };
 
@@ -84,7 +80,7 @@ class Field
     friend class FieldCell;
     size_t pos = 1;
     std::vector<FieldCell> general_vW;
-    std::vector<FieldCell*> vectorOf_EMPTY;
+    std::vector<FieldCell> vectorOf_EMPTY;
 
 public:
     Field()
@@ -106,7 +102,15 @@ public:
     //set(fruit) for map
     //snake move base on index FieldCell or save vector logic
     
+    FieldCell& findCell(FieldCell &block)
+    {
+        auto it = std::find(vectorOf_EMPTY.begin(), vectorOf_EMPTY.end(), block);
 
+        if (it == vectorOf_EMPTY.end())
+            throw std::logic_error("findCell error");
+
+        return *it; 
+    }
     size_t findNextFree()
     {
         std::random_device rd;
@@ -117,7 +121,6 @@ public:
 
         return pos;
     }
-
     void set(FieldCell &block)
     {
         general_vW[block.coord.first * COLS + block.coord.second].symbol = block.symbol;
@@ -169,7 +172,6 @@ public:
             set(border);
         }
     }
-
     void genVectorOf_EMPTY()
     {
         for (SHORT i = 0; i < ROWS; ++i)
@@ -178,17 +180,15 @@ public:
             {
                 if (general_vW[i * COLS + j].symbol == EMPTY)
                 {
-                    vectorOf_EMPTY.push_back(&general_vW[i * COLS + j]);
+                    vectorOf_EMPTY.push_back(general_vW[i * COLS + j]);
                 }
             }
         }
     }
-
 void setMap(FieldCell &block, char mapKey, char insertKey)
 {
     throw std::logic_error("setMap error");
 }
-
     void print()
     {
         for (int i = 0; i < ROWS; ++i)
@@ -211,13 +211,24 @@ class Snake_2
     size_t index = 0;
     std::list<FieldCell> list;
 
-
-    //TODO взять координаты из Field
     bool isFruitNon = true; 
-    FieldCell* fruit;
+    FieldCell fruit;
+
+    bool isFirst = true;
 
     void move()
     {
+        {
+           
+                if(isFirst)
+                {
+                    isFirst = false;
+                    FieldCell block = *list.begin();
+                    auto it = std::find(v.vectorOf_EMPTY.begin(), v.vectorOf_EMPTY.end(), block);
+                    v.vectorOf_EMPTY.erase(it);
+                }
+        }
+
         SHORT x = 0, y = 0;
         if (currentDirection == (Direction::UP))
             y = -1;
@@ -238,25 +249,28 @@ class Snake_2
 
         if(isFruitNon)
         {
-            fruit = v.vectorOf_EMPTY[v.findNextFree()]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            size_t pos = v.findNextFree();
+            fruit = v.vectorOf_EMPTY[pos]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            v.vectorOf_EMPTY.erase(v.vectorOf_EMPTY.begin() + pos);
 
-            fruit->symbol = FRUIT;
-            v.set(*fruit);
+            fruit.symbol = FRUIT;
+            v.set(fruit);
             isFruitNon = false;
         }
-        
-
-        if (tempX == fruit->coord.second && tempY == fruit->coord.first)
+        if (tempX == fruit.coord.second && tempY == fruit.coord.first)
         {
             // fruit_Eat();
             
-            list.push_front(*fruit);
+            list.push_front(fruit);
             list.front().symbol = SNEAKE_BODY;
             v.set(*list.begin());
 
-            fruit = v.vectorOf_EMPTY[v.findNextFree()]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
-            fruit->symbol = FRUIT;
-            v.set(*fruit);
+            size_t pos = v.findNextFree();
+            fruit = v.vectorOf_EMPTY[pos]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            v.vectorOf_EMPTY.erase(v.vectorOf_EMPTY.begin() + pos);
+
+            fruit.symbol = FRUIT;
+            v.set(fruit);
 
             return;
         }
@@ -272,7 +286,7 @@ class Snake_2
 //v.print();
         v.set(*list.begin());
 //v.print();
-        v.set(*fruit);
+        v.set(fruit);
 //v.print();
 
 
