@@ -265,10 +265,13 @@ class Snake_2
         }
 
         moveTailToBeginning();
-
         list.begin()->coord.second += x;
         list.begin()->coord.first += y;
-
+            {
+            FieldCell& block = v.findCell(*list.begin());
+            block.coord.first = old_tail.coord.first;
+            block.coord.second = old_tail.coord.second;
+            } 
 //v.print();
         old_tail.symbol = EMPTY;
         v.set(old_tail);
@@ -286,13 +289,14 @@ class Snake_2
         std::list<FieldCell> list2;
 
         FieldCell lastElement = list.back();
+            //FieldCell& block = v.findCell(lastElement);
         lastElement.coord.first = list.front().coord.first;
+            //block.coord.first = list.front().coord.first;
         lastElement.coord.second = list.front().coord.second;
+            //block.coord.second = list.front().coord.second;
 
         list.pop_back();
         list.push_front(lastElement);
-
-        list = list;
     }
 
 public:
@@ -407,6 +411,7 @@ int main()
             game_2.keyScan();
             game_2.move();
             game_2.print();
+            SetConsoleCursorPosition(console, COORD(0, 0));
         }
 
         // {
