@@ -1,3 +1,4 @@
+//TODO почистить
 #include <conio.h>
 #include <windows.h>
 #include <iostream>
@@ -18,10 +19,17 @@
 #define SHORT_CAST(x) static_cast<SHORT>(x)
 #define UNSIGNED_CAST(x) static_cast<unsigned>(x)
 
+//TODO !!! лучше в namespace как key
 #define EMPTY ' '
 #define BORDER '#'
-#define SNEAKE_BODY '='
+#define SNAKE_BODY '='
 #define FRUIT '@'
+
+//TODO красивая ошибка: конец игры
+//TODO score
+//TODO цвет
+
+//TODO туман войны
 
 namespace key
 {
@@ -52,20 +60,32 @@ static const SHORT COLS = 15; // столбцов
 
 class FieldCell
 {
-    friend class Game_2;
-    friend class Snake_2;
-    friend class Field;
-
+    private:
     std::pair<SHORT, SHORT> coord;
-
+    //char symbol;
 public:
-    char symbol;
-    size_t index;
+    //FieldCell(std::pair<SHORT, SHORT> coord, char symbol) : coord(coord), symbol(symbol) {}
+    FieldCell(SHORT i, SHORT j) : coord(std::pair<SHORT, SHORT>(j, i)) {} 
 
-    FieldCell() = default;
-    FieldCell(std::pair<SHORT, SHORT> coord, char symbol) : coord(coord), symbol(symbol) {}
-    FieldCell(std::pair<SHORT, SHORT> coord) : coord(coord) {}
-    FieldCell(std::pair<SHORT, SHORT> coord, char symbol, size_t index) : coord(coord), symbol(symbol), index(index) {}
+    SHORT& x()
+    {
+        return coord.first;
+    }
+
+    SHORT& y()
+    {
+        return coord.second;
+    }
+
+    const SHORT& x() const
+    {
+        return coord.first;
+    }
+
+    const SHORT& y() const
+    {
+        return coord.second;
+    }
 
     bool operator==(const FieldCell &other) const
     {
@@ -75,260 +95,260 @@ public:
 
 class Field
 {
-    friend class Game_2;
-    friend class Snake_2;
-    friend class FieldCell;
-    size_t pos = 1;
-    std::vector<FieldCell> general_vW;
-    std::vector<FieldCell> vectorOf_EMPTY;
-
 public:
     Field()
     {
-        general_vW.reserve(UNSIGNED_CAST(ROWS) * UNSIGNED_CAST(COLS));
-        generateCoordinates_NON();
-        drawField();
-        genVectorOf_EMPTY();
+        cells.reserve(UNSIGNED_CAST(ROWS) * UNSIGNED_CAST(COLS));
+
+        fillWithEmpty();
+        fillWithBorders();
+
+        fillVectorOfEmpty();
     }
 
-    Field &operator=(const Field &other)
+    FieldCell extractRandomCell()
     {
-        if (this != &other)
-        {
-            general_vW = other.general_vW;
-        }
-        return *this;
+            size_t pos = findNextFree();
+            auto it = vectorOfEmpty.begin() + pos;
+            FieldCell extractedCell = *it;
+
+            swapAndErase(*it, vectorOfEmpty.back());
+
+            return extractedCell;
+            // FieldCell randomCell = vectorOfEmpty[pos]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
+            // swapAndErase(vectorOfEmpty.back(), *(vectorOfEmpty.begin() + pos));
+            // return randomCell;
     }
 
-
-    //findNextFree->fruit
-    //set(fruit) for map
-    //snake move base on index FieldCell or save vector logic
-    
-    FieldCell& findCell(FieldCell &block)
+    FieldCell extractCell(size_t i, size_t j)
     {
-        auto it = std::find(vectorOf_EMPTY.begin(), vectorOf_EMPTY.end(), block);
+        auto it = findCell(FieldCell(i, j));
+        FieldCell extractedCell = *it;
 
-        if (it == vectorOf_EMPTY.end())
+        swapAndErase(*it, vectorOfEmpty.back());
+
+        return extractedCell;
+    }
+
+    // FieldCell extractCell(SHORT x, SHORT y)
+    // {
+    //     auto it =  findCell(FieldCell(std::pair<SHORT, SHORT>(x, y)));
+    //     FieldCell extractedCell = *it;
+
+    //     swapAndErase(*it, vectorOfEmpty.back());
+
+    //     return extractedCell;
+    // }
+
+    std::vector<FieldCell>::iterator findCell(const FieldCell &block)
+    {
+        auto it = std::find(vectorOfEmpty.begin(), vectorOfEmpty.end(), block);
+
+        if (it == vectorOfEmpty.end())
             throw std::logic_error("findCell error");
 
-        return *it; 
+        return it; 
     }
-    size_t findNextFree()
-    {
-        std::random_device rd;
-        std::mt19937 g(rd());
 
-        std::uniform_int_distribution<size_t> rnd(0, vectorOf_EMPTY.size() - 1);
-        pos = rnd(g);
+    void returnCell(const FieldCell &block)
+    {
+        vectorOfEmpty.push_back(block);
+        set(vectorOfEmpty.back(), EMPTY);
+    }
 
-        return pos;
-    }
-    void set(FieldCell &block)
+    void set(const FieldCell &block, char symbol)
     {
-        general_vW[block.coord.first * COLS + block.coord.second].symbol = block.symbol;
+        cells[block.y() * COLS + block.x()] = symbol;
     }
-    FieldCell get(SHORT x, SHORT y)
-    {
-        return general_vW[x * COLS + y];
-    }
-    void generateCoordinates_NON()
-    {
-        size_t index = 0;
-        for (SHORT i = 0; i < ROWS; ++i)
-        {
-            for (SHORT j = 0; j < COLS; ++j)
-            {
-                general_vW.push_back(FieldCell(std::pair<SHORT, SHORT>(i, j), EMPTY, index));
-                index++;
-            }
-        }
-        // std::random_device rd;
-        // std::mt19937 g(rd());
-        // std::shuffle(general_vW.begin(), general_vW.end(), g);
-        
-    }
-    void drawField()
-    {
-        FieldCell border(std::pair<SHORT, SHORT>(SHORT_CAST(0), SHORT_CAST(0)), BORDER);
 
-        for (SHORT i = 0; i < COLS; i++)
-        {
-            border.coord.first = 0;
-            border.coord.second = i;
-            set(border);
+    // char get(SHORT x, SHORT y) const
+    // {
+    //     return cells[x * COLS + y];
+    // }
 
-        }
-        for (SHORT i = 0; i < ROWS; i++)
-        {
-            border.coord.first = i;
-            border.coord.second = 0;
-            set(border);
-
-            border.coord.second = COLS - 1;
-            set(border);
-        }
-        for (SHORT i = 0; i < COLS; i++)
-        {
-            border.coord.first = ROWS - 1;
-            border.coord.second = i;
-            set(border);
-        }
-    }
-    void genVectorOf_EMPTY()
-    {
-        for (SHORT i = 0; i < ROWS; ++i)
-        {
-            for (SHORT j = 0; j < COLS; ++j)
-            {
-                if (general_vW[i * COLS + j].symbol == EMPTY)
-                {
-                    vectorOf_EMPTY.push_back(general_vW[i * COLS + j]);
-                }
-            }
-        }
-    }
-void setMap(FieldCell &block, char mapKey, char insertKey)
-{
-    throw std::logic_error("setMap error");
-}
-    void print()
+    void print() const
     {
         for (int i = 0; i < ROWS; ++i)
         {
             for (int j = 0; j < COLS; ++j)
             {
-                std::cout << general_vW[i * COLS + j].symbol << " ";
+                std::cout << cells[i * COLS + j]<< " ";
             }
             std::cout << std::endl;
+        }
+    }
+
+    private:
+    std::vector<char> cells;
+    std::vector<FieldCell> vectorOfEmpty;
+
+     void swapAndErase(FieldCell &a, FieldCell &b)
+    {
+        std::swap(a, b);
+        vectorOfEmpty.pop_back();
+    }
+
+    size_t findNextFree()
+    {
+        std::random_device rd;
+        std::mt19937 g(rd());
+
+        std::uniform_int_distribution<size_t> rnd(0, vectorOfEmpty.size() - 1);
+        size_t pos = rnd(g);
+
+        return pos;
+    }
+
+    void fillWithEmpty()
+    {
+        for (SHORT i = 0; i < ROWS; ++i)
+        {
+            for (SHORT j = 0; j < COLS; ++j)
+            {
+                cells.push_back(EMPTY);
+            }
+        }
+    }
+
+     void fillWithBorders()
+    {
+        for (SHORT j = 0; j < COLS; j++)
+        {
+            set(FieldCell(0, j), BORDER);
+            set(FieldCell(ROWS - 1, j), BORDER);
+        }
+
+        for (SHORT i = 0; i < ROWS; i++)
+        {
+            set(FieldCell(i, 0), BORDER);
+            set(FieldCell(i, COLS - 1), BORDER);
+        }
+    }
+
+    void fillVectorOfEmpty()
+    {
+        for (SHORT i = 0; i < ROWS; ++i)
+        {
+            for (SHORT j = 0; j < COLS; ++j)
+            {
+                if (cells[i * COLS + j] == EMPTY)
+                {
+                    vectorOfEmpty.push_back(FieldCell(i, j));
+                }
+            }
         }
     }
 };
 
 class Snake_2
 {
-    friend class Game_2;
+    public:
+    Snake_2(Direction currentDirection, Field &field) 
 
-    Field& v;
-    Direction currentDirection;
-    std::list<FieldCell> list;
-    FieldCell fruit;
-
-    bool isFruitNon = true; 
+    :currentDirection(currentDirection), field(field),  list(1, field.extractCell(ROWS / 2, COLS / 2)), fruit(field.extractRandomCell())
+    {
+        field.set(fruit, FRUIT);
+        field.set(*list.begin(), SNAKE_BODY);
+    }
 
     void move()
     {
-        SHORT x = 0, y = 0;
+        FieldCell newCell = *list.begin();
+
         if (currentDirection == (Direction::UP))
-            y = -1;
+            newCell.y() += -1;
         else if (currentDirection == (Direction::DOWN))
-            y = 1;
+            newCell.y() += 1;
         else if (currentDirection == (Direction::LEFT))
-            x = -1;
+            newCell.x() += -1;
         else if (currentDirection == (Direction::RIGHT))
-            x = 1;
-        // tail.coord.first
-        SHORT tempX = list.begin()->coord.second + x;
-        SHORT tempY = list.begin()->coord.first + y;
+            newCell.x() += 1;
 
-        
-        auto it = list.end();
-        --it;
-        FieldCell old_tail = *it;
-
-        if(isFruitNon)
+        if (newCell == fruit)
         {
-            size_t pos = v.findNextFree();
-            fruit = v.vectorOf_EMPTY[pos]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
-            v.vectorOf_EMPTY.erase(v.vectorOf_EMPTY.begin() + pos);
+            list.push_front(newCell);
+            field.set(newCell, SNAKE_BODY);
 
-            fruit.symbol = FRUIT;
-            v.set(fruit);
-            isFruitNon = false;
+            fruit = field.extractRandomCell();
+            field.set(fruit, FRUIT);
         }
-        if (tempX == fruit.coord.second && tempY == fruit.coord.first)
+        else
         {
-            // fruit_Eat();
-            
-            list.push_front(fruit);
-            list.front().symbol = SNEAKE_BODY;
-            v.set(*list.begin());
+            FieldCell newHead = field.extractCell(newCell.y(), newCell.x());
+            list.push_front(newHead);
+            field.set(list.front(), SNAKE_BODY);
 
-            size_t pos = v.findNextFree();
-            fruit = v.vectorOf_EMPTY[pos]; //FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(5), SHORT_CAST(7)), FRUIT);
-            v.vectorOf_EMPTY.erase(v.vectorOf_EMPTY.begin() + pos);
+            field.returnCell(list.back()); //field.set(list.back(), EMPTY);
+            list.pop_back();
+        }
 
-            fruit.symbol = FRUIT;
-            v.set(fruit);
 
+        // auto it = list.end();
+        // --it;
+        // FieldCell old_tail = *it;
+        // field.set(list.back(), EMPTY);
+        // list.pop_back();
+        // list.push_front(newCell);
+        // field.set(list.front(), SNAKE_BODY);
+        //     {
+        //     auto it = field.findCell(list.front());
+        //     it->coord.first = old_tail.coord.first;
+        //     it->coord.second = old_tail.coord.second;
+        //     } 
+//field.print();
+        //old_tail.symbol = EMPTY;
+        //field.set(old_tail);
+//field.print();
+        //field.set(*list.begin());
+//field.print();
+        //field.set(fruit);
+//field.print();
+    }
+    void changeDirection(Direction newDirection)
+    {
+        if (newDirection == Direction::NONE)
             return;
-        }
 
-        moveTailToBeginning();
-        list.begin()->coord.second += x;
-        list.begin()->coord.first += y;
-            {
-            FieldCell& block = v.findCell(*list.begin());
-            block.coord.first = old_tail.coord.first;
-            block.coord.second = old_tail.coord.second;
-            } 
-//v.print();
-        old_tail.symbol = EMPTY;
-        v.set(old_tail);
-//v.print();
-        v.set(*list.begin());
-//v.print();
-        v.set(fruit);
-//v.print();
-
-
+        currentDirection = newDirection;
     }
 
-    void moveTailToBeginning()
-    {
-        std::list<FieldCell> list2;
+    private:
 
-        FieldCell lastElement = list.back();
-            //FieldCell& block = v.findCell(lastElement);
-        lastElement.coord.first = list.front().coord.first;
-            //block.coord.first = list.front().coord.first;
-        lastElement.coord.second = list.front().coord.second;
-            //block.coord.second = list.front().coord.second;
-
-        list.pop_back();
-        list.push_front(lastElement);
-    }
-
-public:
-    Snake_2();
-    Snake_2(Direction currentDirection, Field &v) :currentDirection(currentDirection), v(v)
-    {
-        list.emplace_front(FieldCell(std::pair<SHORT, SHORT>(SHORT_CAST(ROWS / 2), SHORT_CAST(COLS / 2)), SNEAKE_BODY));
-
-            FieldCell block = *list.begin();
-            auto it = std::find(v.vectorOf_EMPTY.begin(), v.vectorOf_EMPTY.end(), block);
-            v.vectorOf_EMPTY.erase(it);
-    }
-
-    Snake_2 &operator=(const Snake_2 &other)
-    {
-        if (this != &other)
-        {
-            v.general_vW = other.v.general_vW;
-            currentDirection = other.currentDirection;
-            v = other.v;
-        }
-        return *this;
-    }
+    Direction currentDirection;
+    Field& field;
+    std::list<FieldCell> list; //std::list<COORD> list;
+    FieldCell fruit;
 };
 
 class Game_2
 {
-    friend class Snake_2;
-    friend class Field;
-    friend class FieldCell;
-    Field v;
-    Snake_2 s;
+public:
+    Game_2() : snake(Direction::UP, field), field()
+    {
+
+    }
+
+    void keyScan()
+    {
+        Direction direction = keyScan_2();
+       snake.changeDirection(direction);
+        
+    }
+
+    void move()
+    {
+        snake.move();
+    }
+
+    void print() const
+    {
+        field.print();
+    }
+
+    private:
+
+    Field field;
+    Snake_2 snake;
 
    static Direction keyScan_2()
     {
@@ -362,26 +382,9 @@ class Game_2
         return Direction::NONE;
 
     }
-public:
-    void move()
-    {
-        s.move();
-    }
-    void keyScan()
-    {
-        Direction temp = keyScan_2();
-        if(temp != Direction::NONE)
-            s.currentDirection = temp;
-        
-    }
-    void print()
-    {
-        v.print();
-    }
-     Game_2() : s(Direction::UP, v), v()
-    {
 
-    }
+
+     
 };
 
 std::ostream &operator<<(std::ostream &ostr, const std::list<int> &list)
@@ -416,7 +419,7 @@ int main()
 
         // {
         //     auto start = std::chrono::steady_clock::now();
-        //     FieldCell test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
+        //     FieldCell test(std::pair<SHORT, SHORT>(1, 1), SNAKE_BODY);
         //     std::list<FieldCell> list {test, test, test, test, test, test, test, test, test, test};
         //     for (size_t i = 0; i < 100000; i++)
         //     {
@@ -431,12 +434,12 @@ int main()
         // }
         // {
         //     auto start = std::chrono::steady_clock::now();
-        //     FieldCell test(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY);
+        //     FieldCell test(std::pair<SHORT, SHORT>(1, 1), SNAKE_BODY);
         //     std::deque<FieldCell> q  {test, test, test, test, test, test, test, test, test, test};
         //     for (size_t i = 0; i < 100000; i++)
         //     {
         //         //auto to_swap_back = q.back();
-        //         auto to_swap_front = FieldCell(std::pair<SHORT, SHORT>(1, 1), SNEAKE_BODY); //= q.front();
+        //         auto to_swap_front = FieldCell(std::pair<SHORT, SHORT>(1, 1), SNAKE_BODY); //= q.front();
         //         q.push_front(to_swap_front);
         //         q.pop_back();
         //         //q.push_back(to_swap_front);
